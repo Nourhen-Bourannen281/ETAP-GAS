@@ -1,0 +1,36 @@
+.stock-page {
+  padding: 32px;
+  background: #f1f5f9;
+  min-height: 100vh;
+}
+
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.stock-card {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.stock-qty {
+  font-size: 28px;
+  font-weight: 700;
+  color: #16a34a;
+  margin: 16px 0;
+}
+
+.stock-qty.low {
+  color: #ef4444;
+}
+
+.alert {
+  color: #ef4444;
+  font-weight: 600;
+  margin-top: 8px;
+}

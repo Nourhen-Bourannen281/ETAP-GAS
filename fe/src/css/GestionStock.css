@@ -1,0 +1,68 @@
+/* ==================== Styles spécifiques Gestion Stock ==================== */
+
+.alerte-stock {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  padding: 15px 20px;
+  margin-bottom: 25px;
+  border-radius: 8px;
+  color: #856404;
+}
+
+.alerte-stock h3 {
+  margin: 0 0 10px 0;
+  color: #b35c00;
+}
+
+.alerte-item {
+  margin-bottom: 6px;
+}
+
+.row-low-stock {
+  background-color: #fff3cd !important;
+}
+
+.quantite-cell {
+  text-align: center;
+}
+
+.input-quantite {
+  width: 90px;
+  text-align: center;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.input-quantite:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.statut-stock-bas {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.statut-stock-ok {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+.info-produit {
+  background-color: #f0f8ff;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border-left: 4px solid #3498db;
+}
+
+/* Style pour le checkbox */
+.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: normal;
+}
