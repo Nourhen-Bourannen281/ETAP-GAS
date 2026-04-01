@@ -26,7 +26,8 @@ import ClientDashboard from './pages/client/ClientDashboard';
 import TransporteurDashboard from './pages/transporteur/TransporteurDashboard';
 
 // Sprint 4
-import Factures from './pages/Factures';
+import Factures from './pages/Factures'; // Pour Admin/Commercial
+import MesFactures from './pages/MesFactures'; // Pour Client/Fournisseur
 import ExportImport from './pages/ExportImport';
 import Conformite from './pages/Conformite';
 import Historique from './pages/Historique';
@@ -35,7 +36,7 @@ import Historique from './pages/Historique';
 import Notifications from './pages/Notifications';
 import Rapports from './pages/Rapports';
 import Paiements from './pages/Paiements';
-import ActionLogs from './pages/ActionLogs'; // Correction du nom d'import
+import ActionLogs from './pages/ActionLogs';
 
 function AppLayout() {
   const location = useLocation();
@@ -81,14 +82,15 @@ function AppLayout() {
           {/* Client */}
           <Route path="/client-dashboard" element={<ClientDashboard />} />
           <Route path="/mes-commandes" element={<Commandes />} />
-          <Route path="/mes-factures" element={<Factures />} />
+          <Route path="/mes-livraisons" element={<Livraisons />} />
+          <Route path="/mes-factures" element={<MesFactures />} /> {/* ✅ CORRIGÉ : Maintenant utilise MesFactures */}
 
           {/* Transporteur */}
           <Route path="/transporteur-dashboard" element={<TransporteurDashboard />} />
           <Route path="/mes-livraisons" element={<TransporteurLivraisons />} />
 
-          {/* Sprint 4 */}
-          <Route path="/factures" element={<Factures />} />
+          {/* Sprint 4 - Factures pour Admin/Commercial */}
+          <Route path="/factures" element={<Factures />} /> {/* Pour Admin et Commercial */}
           <Route path="/export-import" element={<ExportImport />} />
           <Route path="/conformite" element={<Conformite />} />
           <Route path="/historique" element={<Historique />} />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import PaymentForm from './PaymentForm';
 import '../../css/ClientDashboard.css';
 
 function ClientDashboard() {
@@ -12,6 +13,7 @@ function ClientDashboard() {
   const [showCommandes, setShowCommandes] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentDetails, setPaymentDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,16 +77,31 @@ function ClientDashboard() {
   const fetchModesPaiement = async () => {
     try {
       const res = await api.get('/modes-paiement');
-      const activeModes = res.data.filter(mode => mode.actif === true);
+      console.log('Modes paiement reçus:', res.data);
+      
+      let activeModes = [];
+      
+      if (res.data && Array.isArray(res.data)) {
+        activeModes = res.data;
+        
+        // Si le champ actif existe, filtrer
+        if (res.data.length > 0 && res.data[0].hasOwnProperty('actif')) {
+          activeModes = res.data.filter(mode => mode.actif === true);
+        }
+      }
+      
       setModesPaiement(activeModes);
+      console.log(`${activeModes.length} mode(s) de paiement chargé(s)`);
+      
     } catch (error) {
       console.error('Erreur chargement modes paiement:', error);
       setModesPaiement([
-        { nom: 'Carte bancaire', description: 'Paiement sécurisé par carte' },
-        { nom: 'Virement', description: 'Virement bancaire' },
-        { nom: 'Chèque', description: 'Chèque bancaire' },
-        { nom: 'Espèces', description: 'Paiement en espèces' }
+        { _id: '1', nom: 'Carte bancaire', description: 'Paiement sécurisé par carte', actif: true },
+        { _id: '2', nom: 'Virement', description: 'Virement bancaire', actif: true },
+        { _id: '3', nom: 'Chèque', description: 'Chèque bancaire', actif: true },
+        { _id: '4', nom: 'Espèces', description: 'Paiement en espèces', actif: true }
       ]);
+      addToast('Utilisation des modes de paiement par défaut', 'info');
     }
   };
 
@@ -214,7 +231,13 @@ function ClientDashboard() {
       addToast('Aucun mode de paiement disponible', 'error');
       return;
     }
+    setPaymentMethod('');
+    setPaymentDetails(null);
     setShowPaymentModal(true);
+  };
+
+  const handlePaymentDetailsChange = (details) => {
+    setPaymentDetails(details);
   };
 
   const createOrderWithPayment = async () => {
@@ -227,6 +250,38 @@ function ClientDashboard() {
     try {
       const totalAmount = calculateTotal();
       
+      // Normaliser le nom pour l'affichage
+      const displayName = {
+        'cheque': 'Chèque',
+        'espece': 'Espèces',
+        'Carte Banquaire': 'Carte bancaire'
+      }[paymentMethod] || paymentMethod;
+      
+      // Préparer les détails du paiement
+      let paymentDetailsText = '';
+      let reference = '';
+      
+      if (paymentDetails) {
+        switch(paymentMethod) {
+          case 'cheque':
+          case 'Chèque':
+            paymentDetailsText = `Chèque n°${paymentDetails.numeroCheque} - Banque: ${paymentDetails.banque} - Émis le: ${paymentDetails.dateEmission}`;
+            reference = `CHQ-${paymentDetails.numeroCheque}`;
+            break;
+          case 'Carte Banquaire':
+          case 'Carte bancaire':
+            const maskedCard = paymentDetails.numeroCarte?.replace(/\s/g, '').slice(-4) || '';
+            paymentDetailsText = `Carte bancaire **** **** **** ${maskedCard} - Exp: ${paymentDetails.dateExpiration}`;
+            reference = `CARD-${maskedCard}`;
+            break;
+          case 'espece':
+          case 'Espèces':
+            paymentDetailsText = `Espèces - Montant reçu: ${paymentDetails.montantRecu} ${paymentDetails.monnaie} - Reçu par: ${paymentDetails.recoltePar}`;
+            reference = `CASH-${Date.now()}`;
+            break;
+        }
+      }
+      
       const commandeData = {
         numeroCommande: 'CMD-' + Date.now(),
         produits: cart.map(item => ({
@@ -236,7 +291,8 @@ function ClientDashboard() {
           uniteMesure: item.uniteMesure || 'Litre'
         })),
         montantTotal: totalAmount,
-        statut: 'En attente de paiement'
+        statut: 'En attente de paiement',
+        detailsPaiement: paymentDetailsText
       };
       
       const orderResponse = await api.post('/commandes', commandeData);
@@ -245,10 +301,12 @@ function ClientDashboard() {
       const paymentData = {
         commande: newOrder._id,
         montant: totalAmount,
-        modePaiement: paymentMethod,
+        modePaiement: displayName,
         client: user._id,
         clientNom: user.nom || user.email,
-        devise: 'TND'
+        devise: 'TND',
+        reference: reference,
+        description: paymentDetailsText
       };
       
       const paymentResponse = await api.post('/paiements', paymentData);
@@ -258,12 +316,14 @@ function ClientDashboard() {
         statut: 'En attente de validation'
       });
       
-      addToast('Commande créée avec succès ! En attente de validation du paiement', 'success');
+      addToast(`Commande créée avec succès ! Mode: ${displayName}`, 'success');
       
+      // Réinitialiser
       setCart([]);
       setShowCart(false);
       setShowPaymentModal(false);
       setPaymentMethod('');
+      setPaymentDetails(null);
       await fetchCommandes();
       
     } catch (error) {
@@ -323,9 +383,12 @@ function ClientDashboard() {
   const getPaymentIcon = (modeNom) => {
     const icons = {
       'Carte bancaire': '💳',
+      'Carte Banquaire': '💳',
       'Virement': '🏦',
       'Chèque': '📝',
+      'cheque': '📝',
       'Espèces': '💵',
+      'espece': '💵',
       'PayPal': '💰',
       'Mobile Money': '📱'
     };
@@ -396,7 +459,7 @@ function ClientDashboard() {
 
       {showPaymentModal && (
         <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
-          <div className="payment-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="payment-modal large-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Validation de la commande</h3>
               <button className="modal-close" onClick={() => setShowPaymentModal(false)}>×</button>
@@ -419,7 +482,7 @@ function ClientDashboard() {
               </div>
 
               <div className="payment-methods">
-                <h4>Choisissez votre mode de paiement</h4>
+                <h4>1. Choisissez votre mode de paiement</h4>
                 <div className="payment-options">
                   {modesPaiement.length === 0 ? (
                     <div className="no-payment-methods">
@@ -429,7 +492,16 @@ function ClientDashboard() {
                   ) : (
                     modesPaiement.map(mode => (
                       <label key={mode._id || mode.nom} className="payment-option">
-                        <input type="radio" name="paymentMethod" value={mode.nom} onChange={(e) => setPaymentMethod(e.target.value)} checked={paymentMethod === mode.nom} />
+                        <input 
+                          type="radio" 
+                          name="paymentMethod" 
+                          value={mode.nom} 
+                          onChange={(e) => {
+                            setPaymentMethod(e.target.value);
+                            setPaymentDetails(null);
+                          }} 
+                          checked={paymentMethod === mode.nom} 
+                        />
                         <span className="payment-icon">{getPaymentIcon(mode.nom)}</span>
                         <span className="payment-name">{mode.nom}</span>
                         {mode.description && <small className="payment-desc">{mode.description}</small>}
@@ -438,11 +510,33 @@ function ClientDashboard() {
                   )}
                 </div>
               </div>
+
+              {paymentMethod && (
+                <div className="payment-details-section">
+                  <h4>2. Informations de paiement</h4>
+                  <PaymentForm 
+                    paymentMethod={paymentMethod}
+                    totalAmount={calculateTotal()}
+                    user={user}
+                    onPaymentDetailsChange={handlePaymentDetailsChange}
+                  />
+                </div>
+              )}
             </div>
             <div className="modal-buttons">
-              <button className="btn-cancel" onClick={() => setShowPaymentModal(false)}>Annuler</button>
-              <button className="btn-confirm" onClick={createOrderWithPayment} disabled={loading || !paymentMethod || modesPaiement.length === 0}>
-                {loading ? 'Traitement en cours...' : '💰 Payer et valider la commande'}
+              <button className="btn-cancel" onClick={() => {
+                setShowPaymentModal(false);
+                setPaymentMethod('');
+                setPaymentDetails(null);
+              }}>
+                Annuler
+              </button>
+              <button 
+                className="btn-confirm" 
+                onClick={createOrderWithPayment} 
+                disabled={loading || !paymentMethod}
+              >
+                {loading ? 'Traitement en cours...' : '💰 Valider la commande'}
               </button>
             </div>
           </div>
@@ -545,7 +639,15 @@ function ClientDashboard() {
             <>
               <div className="cart-items">
                 <table className="cart-table">
-                  <thead><tr><th>Produit</th><th>Prix unitaire</th><th>Quantité</th><th>Total</th><th></th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Produit</th>
+                      <th>Prix unitaire</th>
+                      <th>Quantité</th>
+                      <th>Total</th>
+                      <th></th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {cart.map(item => {
                       const stockQuantity = getStockQuantity(item);
@@ -554,7 +656,10 @@ function ClientDashboard() {
                         <tr key={item._id}>
                           <td className="product-cell">
                             <div className="product-mini-icon">{item.nom?.charAt(0).toUpperCase()}</div>
-                            <div><div className="product-name-cart">{item.nom}</div><div className="product-unit">{uniteMesure}</div></div>
+                            <div>
+                              <div className="product-name-cart">{item.nom}</div>
+                              <div className="product-unit">{uniteMesure}</div>
+                            </div>
                           </td>
                           <td className="price-cell">{item.prixUnitaire.toLocaleString()} TND</td>
                           <td className="quantity-cell">
@@ -562,12 +667,20 @@ function ClientDashboard() {
                             <div className="max-stock">Max: {stockQuantity} {uniteMesure}</div>
                           </td>
                           <td className="total-cell">{(item.prixUnitaire * item.quantite).toLocaleString()} TND</td>
-                          <td className="action-cell"><button onClick={() => removeFromCart(item._id)} className="remove-btn">🗑️</button></td>
+                          <td className="action-cell">
+                            <button onClick={() => removeFromCart(item._id)} className="remove-btn">🗑️</button>
+                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
-                  <tfoot><tr><td colSpan="3" className="total-label">Total</td><td className="total-amount">{calculateTotal().toLocaleString()} TND</td><td></td></tr></tfoot>
+                  <tfoot>
+                    <tr>
+                      <td colSpan="3" className="total-label">Total</td>
+                      <td className="total-amount">{calculateTotal().toLocaleString()} TND</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
               <div className="cart-actions">
@@ -602,11 +715,21 @@ function ClientDashboard() {
                       <span className="commande-number">{cmd.numeroCommande}</span>
                       <span className="commande-date">{new Date(cmd.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     </div>
-                    <div className={`commande-status ${getStatutClass(cmd.statut)}`}>{getStatutIcon(cmd.statut)} {getStatutText(cmd.statut)}</div>
+                    <div className={`commande-status ${getStatutClass(cmd.statut)}`}>
+                      {getStatutIcon(cmd.statut)} {getStatutText(cmd.statut)}
+                    </div>
                   </div>
                   <div className="commande-produits">
                     <table className="produits-table">
-                      <thead><tr><th>Produit</th><th>Quantité</th><th>Unité</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+                      <thead>
+                        <tr>
+                          <th>Produit</th>
+                          <th>Quantité</th>
+                          <th>Unité</th>
+                          <th>Prix unitaire</th>
+                          <th>Total</th>
+                        </tr>
+                      </thead>
                       <tbody>
                         {cmd.produits?.map((p, idx) => (
                           <tr key={idx}>
@@ -621,8 +744,21 @@ function ClientDashboard() {
                     </table>
                   </div>
                   <div className="commande-footer">
-                    <div className="commande-total"><span>Total :</span><strong>{cmd.montantTotal?.toLocaleString()} TND</strong></div>
-                    {cmd.paiementId && <div className="commande-payment-status"><span>💰</span><span>Paiement associé</span></div>}
+                    <div className="commande-total">
+                      <span>Total :</span>
+                      <strong>{cmd.montantTotal?.toLocaleString()} TND</strong>
+                    </div>
+                    {cmd.paiementId && (
+                      <div className="commande-payment-status">
+                        <span>💰</span>
+                        <span>Paiement associé</span>
+                      </div>
+                    )}
+                    {cmd.detailsPaiement && (
+                      <div className="commande-payment-details">
+                        <small>Détails: {cmd.detailsPaiement}</small>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

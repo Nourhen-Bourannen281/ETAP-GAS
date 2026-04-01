@@ -1,5 +1,6 @@
 // controllers/contratController.js
 const Contrat = require('../models/Contrat');
+const Tiers = require('../models/Tiers');
 
 // ==================== LISTE ====================
 exports.getContrats = async (req, res) => {
@@ -14,22 +15,34 @@ exports.getContrats = async (req, res) => {
         .populate('produits.sousProduit', 'nom prixUnitaire uniteMesure')
         .sort({ dateCreation: -1 });
     } else if (userRole === 'Client') {
-      contrats = await Contrat.find({
-        type: 'Vente',
-        tiers: userId
-      })
-        .populate('tiers', 'raisonSociale type')
-        .populate('produits.sousProduit', 'nom prixUnitaire uniteMesure')
-        .sort({ dateCreation: -1 });
-    } else if (userRole === 'Fournisseur') {
-      contrats = await Contrat.find({
-        type: 'Achat',
-        tiers: userId
-      })
-        .populate('tiers', 'raisonSociale type')
-        .populate('produits.sousProduit', 'nom prixUnitaire uniteMesure')
-        .sort({ dateCreation: -1 });
-    } else {
+  // Trouver le tiers lié à ce user
+  const tiers = await Tiers.findOne({ user: userId, type: 0 }); // 0 = Client
+  if (!tiers) {
+    contrats = [];
+  } else {
+    contrats = await Contrat.find({
+      type: 'Vente',
+      tiers: tiers._id
+    })
+      .populate('tiers', 'raisonSociale type')
+      .populate('produits.sousProduit', 'nom prixUnitaire uniteMesure')
+      .sort({ dateCreation: -1 });
+  }
+
+} else if (userRole === 'Fournisseur') {
+  // Trouver le tiers lié à ce user
+  const tiers = await Tiers.findOne({ user: userId, type: 1 }); // 1 = Fournisseur
+  if (!tiers) {
+    contrats = [];
+  } else {
+    contrats = await Contrat.find({
+      type: 'Achat',
+      tiers: tiers._id
+    })
+      .populate('tiers', 'raisonSociale type')
+      .populate('produits.sousProduit', 'nom prixUnitaire uniteMesure')
+      .sort({ dateCreation: -1 });
+  }    } else {
       contrats = [];
     }
 

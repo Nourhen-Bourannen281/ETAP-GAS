@@ -4,6 +4,27 @@ const Commande = require('../models/Commande');
 const Notification = require('../models/Notification');
 const ActionLog = require('../models/ActionLog');
 
+// Fonction utilitaire pour normaliser les noms des modes de paiement
+const normalizeModePaiement = (mode) => {
+  const normalizationMap = {
+    'cheque': 'Chèque',
+    'cheque': 'Chèque',
+    'espece': 'Espèces',
+    'espèces': 'Espèces',
+    'carte banquaire': 'Carte bancaire',
+    'carte bancaire': 'Carte bancaire',
+    'carte': 'Carte bancaire',
+    'virement': 'Virement',
+    'chèque': 'Chèque',
+    'cash': 'Espèces',
+    'card': 'Carte bancaire',
+    'bank transfer': 'Virement'
+  };
+  
+  const lowerMode = mode?.toLowerCase().trim();
+  return normalizationMap[lowerMode] || mode;
+};
+
 // Liste des paiements
 exports.getPaiements = async (req, res) => {
   try {
@@ -44,6 +65,10 @@ exports.createPaiement = async (req, res) => {
       return res.status(400).json({ message: 'Le mode de paiement est obligatoire' });
     }
 
+    // Normaliser le mode de paiement
+    const normalizedModePaiement = normalizeModePaiement(modePaiement);
+    console.log(`Mode de paiement normalisé: ${modePaiement} -> ${normalizedModePaiement}`);
+
     // Générer un numéro de paiement unique
     const numeroPaiement = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
@@ -57,7 +82,7 @@ exports.createPaiement = async (req, res) => {
       clientNom: clientNom || (req.user ? req.user.nom : 'Client'),
       montant: montant,
       devise: devise || 'TND',
-      modePaiement: modePaiement,
+      modePaiement: normalizedModePaiement, // Utiliser le mode normalisé
       statut: 'En attente',
       datePaiement: new Date(),
       reference: reference || null,
@@ -73,20 +98,19 @@ exports.createPaiement = async (req, res) => {
 
     const paiement = await Paiement.create(paiementData);
 
-    // Enregistrer dans le journal - CORRECTION: vérifier que req.user existe
+    // Enregistrer dans le journal
     if (req.user && (req.user._id || req.user.id)) {
       try {
         const userId = req.user._id || req.user.id;
         await ActionLog.create({
           utilisateur: userId,
           action: 'CréationPaiement',
-          details: `Paiement ${paiement.numeroPaiement} créé pour ${commande ? 'commande' : 'facture'} ${commande || facture || 'N/A'}`,
+          details: `Paiement ${paiement.numeroPaiement} créé pour ${commande ? 'commande' : 'facture'} ${commande || facture || 'N/A'} avec mode: ${normalizedModePaiement}`,
           ipAddress: req.ip || req.headers['x-forwarded-for'] || 'unknown',
           dateAction: new Date()
         });
       } catch (logError) {
         console.error('Erreur création ActionLog:', logError.message);
-        // Ne pas bloquer la création du paiement
       }
     }
 
@@ -97,7 +121,7 @@ exports.createPaiement = async (req, res) => {
         await Notification.create({
           utilisateur: userId,
           type: 'PaiementRecu',
-          message: `Un nouveau paiement de ${montant} ${devise || 'TND'} a été enregistré.`,
+          message: `Un nouveau paiement de ${montant} ${devise || 'TND'} a été enregistré. Mode: ${normalizedModePaiement}`,
           lien: `/paiements/${paiement._id}`,
           dateEnvoi: new Date()
         });
@@ -242,5 +266,52 @@ exports.rejeterPaiement = async (req, res) => {
     res.json(paiement);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+};
+
+// Obtenir un paiement par ID
+exports.getPaiementById = async (req, res) => {
+  try {
+    const paiement = await Paiement.findById(req.params.id)
+      .populate('commande', 'numeroCommande montantTotal')
+      .populate('facture', 'numeroFacture montantTotal')
+      .populate('client', 'nom email')
+      .populate('validePar', 'nom email');
+    
+    if (!paiement) {
+      return res.status(404).json({ message: 'Paiement non trouvé' });
+    }
+    
+    res.json(paiement);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Supprimer un paiement (Admin seulement)
+exports.deletePaiement = async (req, res) => {
+  try {
+    const paiement = await Paiement.findById(req.params.id);
+    
+    if (!paiement) {
+      return res.status(404).json({ message: 'Paiement non trouvé' });
+    }
+    
+    await paiement.deleteOne();
+    
+    // Enregistrer dans le journal
+    if (req.user && (req.user._id || req.user.id)) {
+      await ActionLog.create({
+        utilisateur: req.user._id || req.user.id,
+        action: 'SuppressionPaiement',
+        details: `Paiement ${paiement.numeroPaiement} supprimé`,
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+        dateAction: new Date()
+      });
+    }
+    
+    res.json({ message: 'Paiement supprimé avec succès' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

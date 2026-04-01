@@ -12,8 +12,8 @@ const paiementSchema = new mongoose.Schema({
   devise: { type: String, enum: ['TND', 'USD', 'EUR'], default: 'TND' },
   modePaiement: { 
     type: String, 
-    enum: ['Chèque', 'Virement', 'Espèces', 'Carte bancaire', 'Autre'], 
     required: true 
+    // ENUM SUPPRIMÉ - maintenant accepte toutes les valeurs
   },
   statut: { 
     type: String, 
