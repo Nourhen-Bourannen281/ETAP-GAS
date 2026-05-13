@@ -1,0 +1,131 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f8fafc;
+}
+
+/* ================= TOPBAR ================= */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  z-index: 1000;
+}
+
+.burger-btn {
+  border: none;
+  background: #e0f2fe;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-role {
+  background: #e0f2fe;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.topbar-logout {
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  width: 260px;
+  height: calc(100vh - 56px);
+  background: white;
+  border-right: 1px solid #ddd;
+  transform: translateX(-100%);
+  transition: 0.3s;
+  z-index: 999;
+  overflow-y: auto;
+}
+
+.sidebar-open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.sidebar-logo {
+  font-weight: bold;
+}
+
+/* LINKS */
+.sidebar-nav {
+  padding: 10px;
+}
+
+.sidebar-link {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  text-decoration: none;
+  color: #333;
+  border-radius: 8px;
+}
+
+.sidebar-link:hover {
+  background: #e0f2fe;
+}
+
+.active-link {
+  background: #2563eb;
+  color: white;
+}
+
+/* ================= OVERLAY ================= */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 998;
+}
+
+/* ================= CONTENT FIX ================= */
+/* IMPORTANT : empêche le recouvrement */
+.app-layout {
+  padding-top: 56px;
+}
+
+/* desktop */
+@media (min-width: 992px) {
+  .sidebar {
+    transform: translateX(0);
+  }
+
+  .app-layout {
+    padding-left: 260px;
+  }
+}

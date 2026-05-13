@@ -1,0 +1,19 @@
+/* Dashboard.css */
+.dashboard-container {
+  padding: 40px;
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+.dashboard-container h2 {
+  color: #1E40AF;
+  margin-bottom: 20px;
+}
+
+.dashboard-container p {
+  color: #374151;
+  font-size: 18px;
+}
+
+
+

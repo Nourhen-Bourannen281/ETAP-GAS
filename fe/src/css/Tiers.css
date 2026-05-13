@@ -1,0 +1,75 @@
+/* ==================== Styles spécifiques Tiers ==================== */
+
+.filters {
+  margin-bottom: 25px;
+  display: flex;
+  gap: 10px;
+}
+
+.filter-btn {
+  padding: 10px 20px;
+  border: 1px solid #ddd;
+  background-color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-btn:hover {
+  background-color: #f1f1f1;
+}
+
+.filter-btn.active {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.type-client {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.type-fournisseur {
+  color: #e67e22;
+  font-weight: 600;
+}
+
+.font-medium {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Amélioration du modal pour plus d'espace */
+.modal .form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.modal .form-row .form-group {
+  flex: 1;
+}
+
+.modal label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #34495e;
+  font-size: 14px;
+}
+
+.modal input,
+.modal select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.modal input:focus,
+.modal select:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}

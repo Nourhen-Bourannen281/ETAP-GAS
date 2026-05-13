@@ -1,0 +1,51 @@
+/* Filtres par statut */
+.stock-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #475569;
+}
+
+.filter-btn:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.filter-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.filter-btn.success.active { background: #10b981; border-color: #10b981; }
+.filter-btn.warning.active { background: #f59e0b; border-color: #f59e0b; }
+.filter-btn.danger.active { background: #ef4444; border-color: #ef4444; }
+
+/* Lignes du tableau */
+.row-low-stock {
+  background-color: #fff8f0;
+}
+
+.row-out-stock {
+  background-color: #fee2e2;
+}
+
+.stat-card.success .stat-number { color: #10b981; }
+.stat-card.warning .stat-number { color: #f59e0b; }
+.stat-card.danger .stat-number { color: #ef4444; }
